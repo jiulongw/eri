@@ -4,6 +4,7 @@ import TOMLKit
 struct Config: Decodable {
   let `default`: BrowserRef?
   let rule: [Rule]?
+  let browsers: [String: BrowserRef]?
 
   struct BrowserRef: Decodable {
     let browser: String
@@ -15,6 +16,7 @@ struct Config: Decodable {
     let host: String?
     let hostRegex: String?
     let urlRegex: String?
+    let domain: String?
     let browser: String
     let profile: String?
     let args: [String]?
@@ -23,6 +25,7 @@ struct Config: Decodable {
       case host
       case hostRegex = "host_regex"
       case urlRegex = "url_regex"
+      case domain
       case browser
       case profile
       case args
@@ -55,10 +58,29 @@ struct Config: Decodable {
   func match(url: URL) -> BrowserRef {
     if let rules = rule {
       for r in rules where r.matches(url: url) {
-        return BrowserRef(browser: r.browser, profile: r.profile, args: r.args)
+        return resolve(browser: r.browser, profile: r.profile, args: r.args)
       }
     }
-    return self.default ?? BrowserRef(browser: "com.apple.Safari", profile: nil, args: nil)
+    if let d = self.default {
+      return resolve(browser: d.browser, profile: d.profile, args: d.args)
+    }
+    return BrowserRef(browser: "com.apple.Safari", profile: nil, args: nil)
+  }
+
+  // Look up `ref` in the [browsers] table; on hit, the table entry supplies
+  // browser+profile and rule-level args are appended after browser-level
+  // args. On miss, treat `ref` as a bundle id and use the caller's own
+  // profile/args (the inline form).
+  private func resolve(browser ref: String, profile: String?, args: [String]?) -> BrowserRef {
+    if let def = browsers?[ref] {
+      let merged = (def.args ?? []) + (args ?? [])
+      return BrowserRef(
+        browser: def.browser,
+        profile: def.profile,
+        args: merged.isEmpty ? nil : merged
+      )
+    }
+    return BrowserRef(browser: ref, profile: profile, args: args)
   }
 }
 
@@ -71,6 +93,9 @@ extension Config.Rule {
     guard let host = url.host?.lowercased() else { return false }
     if let pattern = hostRegex, regexMatches(pattern: pattern, in: host) {
       return true
+    }
+    if let d = domain?.lowercased() {
+      return host == d || host.hasSuffix("." + d)
     }
     if let glob = self.host?.lowercased() {
       return globMatches(pattern: glob, host: host)

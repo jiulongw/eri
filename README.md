@@ -37,33 +37,55 @@ Drop a config at one of:
 A starter config lives at [`config.example.toml`](./config.example.toml):
 
 ```toml
-default = { browser = "com.apple.Safari" }
+[browsers.safari]
+browser = "com.apple.Safari"
 
-[[rule]]
-host = "github.com"
-browser = "com.google.Chrome"
-profile = "Default"
-
-[[rule]]
-host = "*.work.example.com"
-browser = "com.google.Chrome"
-profile = "Work"
-
-[[rule]]
-host_regex = "^(.+\\.)?notion\\.so$"
+[browsers.chrome-personal]
 browser = "com.google.Chrome"
 profile = "Personal"
 
+[browsers.chrome-work]
+browser = "com.google.Chrome"
+profile = "Work"
+
+default = { browser = "safari" }
+
+[[rule]]
+host = "github.com"
+browser = "chrome-personal"
+
+[[rule]]
+domain = "work.example.com"
+browser = "chrome-work"
+
+[[rule]]
+domain = "notion.so"
+browser = "chrome-personal"
+
+# Inline form: `browser` is a bundle id, no [browsers] entry needed.
 [[rule]]
 url_regex = "^https?://localhost(:\\d+)?(/.*)?$"
 browser = "org.mozilla.firefox"
 ```
 
-Rules are evaluated top-to-bottom; first match wins. Each rule must match by exactly one of `host` (glob with `*`), `host_regex`, or `url_regex`. If nothing matches, `default` is used; if `default` is omitted, Safari is used.
+Rules are evaluated top-to-bottom; first match wins. Each rule must match by exactly one of `host` (glob with `*`), `domain` (the value itself plus any subdomain of it), `host_regex`, or `url_regex`. If nothing matches, `default` is used; if `default` is omitted, Safari is used.
+
+### Browsers
+
+Define `(browser, profile, args)` triples once under `[browsers.<id>]` and reference them from rules:
+
+```toml
+[browsers.chrome-work]
+browser = "com.google.Chrome"
+profile = "Work"
+args = ["--enable-features=Foo"]   # optional, applied wherever this id is used
+```
+
+A rule's `browser` field is looked up in `[browsers]` first. On a miss, it's treated as a bundle id (the inline form), and the rule's own `profile` / `args` apply. When using an id reference, rule-level `args` are appended after browser-level `args`; rule-level `profile` is ignored (the id already pins it).
 
 ### Fields
 
-- `browser` — bundle id of the target app, e.g. `com.apple.Safari`, `com.google.Chrome`, `org.mozilla.firefox`, `com.microsoft.edgemac`, `com.brave.Browser`.
+- `browser` — either an id from `[browsers]`, or a bundle id directly (`com.apple.Safari`, `com.google.Chrome`, `org.mozilla.firefox`, `com.microsoft.edgemac`, `com.brave.Browser`, ...).
 - `profile` — passed as `--profile-directory=<value>`. Chromium-family browsers only; silently ignored for Safari (Safari has no CLI profile flag).
 - `args` — extra command-line arguments appended to the target browser.
 

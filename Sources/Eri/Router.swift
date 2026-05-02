@@ -11,7 +11,13 @@ enum Router {
     // Safari has no CLI/URL-scheme way to select a profile, so silently
     // drop it rather than letting the --args path swallow the URL.
     if let profile = target.profile, target.browser != "com.apple.Safari" {
-      passthrough.append("--profile-directory=\(profile)")
+      let resolved =
+        target.browser == "com.google.Chrome"
+        ? ChromeProfileResolver.resolve(profile)
+        : profile
+      if let resolved {
+        passthrough.append("--profile-directory=\(resolved)")
+      }
     }
     if let extra = target.args {
       passthrough.append(contentsOf: extra)

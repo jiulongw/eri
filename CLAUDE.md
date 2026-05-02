@@ -15,7 +15,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 The icon pipeline shells out to `sips`, `pngquant`, and `iconutil` — `pngquant` must be on `PATH` (e.g. `brew install pngquant`).
 
-There is no test target.
+`swift test` runs the `EriTests` target (Swift Testing, `@Test`/`#expect` style). Tests live in `Tests/EriTests/`.
 
 ## Runtime model
 
@@ -34,7 +34,8 @@ Consequences worth remembering when editing:
 `AppDelegate.handleGetURL` → `Router.open(url:config:)` → `Config.match(url:)` → `/usr/bin/open`.
 
 - `Config.load()` searches `~/.config/eri/config.toml` then `~/Library/Application Support/Eri/config.toml`. First hit wins. Missing config → user-visible notification, but the app still terminates cleanly.
-- `Config.match` walks `[[rule]]` entries top-to-bottom; first match wins. A rule matches by **exactly one** of `host` (glob with `*`), `host_regex`, or `url_regex` — `Rule.matches` checks them in url_regex → host_regex → host order. Glob is implemented by escaping the pattern then turning literal `\*` into `.*` and anchoring with `^…$` (see `Config.swift:78`).
+- `Config.match` walks `[[rule]]` entries top-to-bottom; first match wins. A rule matches by **exactly one** of `host` (glob with `*`), `domain` (value itself + any subdomain via `host == d || host.hasSuffix("." + d)`), `host_regex`, or `url_regex` — `Rule.matches` checks them in url_regex → host_regex → domain → host order. Glob is implemented by escaping the pattern then turning literal `\*` into `.*` and anchoring with `^…$` (see `Config.swift:112`).
+- `Config` also holds a `[String: BrowserRef]` `browsers` map (decoded from `[browsers.<id>]`). `Config.resolve` looks up a rule's or default's `browser` string in that map first; on hit, the entry's bundle id/profile/args replace the rule's, with rule-level `args` appended after browser-level `args` (rule-level `profile` is ignored). On miss, the string is treated as a bundle id (the inline form, current behavior).
 - `Router.launch` has two non-obvious workarounds:
   - **Safari profile is silently dropped** (`Router.swift:13`). Safari has no CLI/URL-scheme way to pick a profile, and if we let `--profile-directory=…` reach the `--args` branch, `open` swallows the URL too.
   - **`-n` is required whenever extra args are passed** (`Router.swift:24`). Without it, `open` skips `--args` entirely when the target is already running, dropping both the profile flag and the URL. `-n` forces a fresh launch; Chromium's single-instance handler IPCs the args to the existing process so no duplicate window stays open.

@@ -4,32 +4,52 @@
 #   ~/.config/eri/config.toml                 (preferred)
 #   ~/Library/Application Support/Eri/config.toml
 #
-# `browser` is a bundle ID (com.apple.Safari, com.google.Chrome,
-# org.mozilla.firefox, com.microsoft.edgemac, com.brave.Browser, ...).
-# `profile` is passed as --profile-directory=<value> for Chromium browsers.
-# `args` adds extra command-line arguments to the target browser.
+# Two ways to specify a target on a rule:
+#
+#   1. Define a [browsers.<id>] entry once and reference it by id from any
+#      number of rules. The id pins a (browser, profile, args) triple.
+#   2. Set `browser` directly to a bundle id (com.apple.Safari,
+#      com.google.Chrome, org.mozilla.firefox, com.microsoft.edgemac,
+#      com.brave.Browser, ...) and add inline `profile` / `args` if needed.
+#
+# `browser` on a rule is looked up in [browsers] first; on a miss it is
+# treated as a bundle id (the inline form). `profile` is passed as
+# --profile-directory=<value> for Chromium browsers. Rule-level `args` are
+# appended to any browser-level `args`.
 
-# Fallback when no rule matches.
-default = { browser = "com.apple.Safari" }
+[browsers.safari]
+browser = "com.apple.Safari"
 
-# Rules are evaluated top-to-bottom; first match wins.
-# Each rule must match by exactly one of: host (glob), host_regex, url_regex.
-
-[[rule]]
-host = "github.com"
-browser = "com.google.Chrome"
-profile = "Default"
-
-[[rule]]
-host = "*.work.example.com"
-browser = "com.google.Chrome"
-profile = "Work"
-
-[[rule]]
-host_regex = "^(.+\\.)?notion\\.so$"
+[browsers.chrome-personal]
 browser = "com.google.Chrome"
 profile = "Personal"
 
+[browsers.chrome-work]
+browser = "com.google.Chrome"
+profile = "Work"
+
+# Fallback when no rule matches.
+default = { browser = "safari" }
+
+# Rules are evaluated top-to-bottom; first match wins.
+# Each rule must match by exactly one of: host (glob), domain, host_regex,
+# url_regex. `domain` matches the value itself and any subdomain of it
+# (e.g. domain = "google.com" matches google.com and www.google.com but
+# not evilgoogle.com).
+
+[[rule]]
+host = "github.com"
+browser = "chrome-personal"
+
+[[rule]]
+domain = "work.example.com"
+browser = "chrome-work"
+
+[[rule]]
+domain = "notion.so"
+browser = "chrome-personal"
+
+# Inline form — bundle id with rule-level profile/args, no [browsers] entry.
 [[rule]]
 url_regex = "^https?://localhost(:\\d+)?(/.*)?$"
 browser = "org.mozilla.firefox"
