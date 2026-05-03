@@ -42,6 +42,12 @@ struct Config: Decodable {
     }
   }
 
+  static let defaultScaffold = """
+    [default]
+    browser = "com.apple.Safari"
+
+    """
+
   private static func resolveConfigPath() throws -> URL {
     let fm = FileManager.default
     let home = fm.homeDirectoryForCurrentUser
@@ -52,7 +58,17 @@ struct Config: Decodable {
     for url in candidates where fm.fileExists(atPath: url.path) {
       return url
     }
-    throw ConfigError.notFound(searched: candidates.map { $0.path })
+    let primary = candidates[0]
+    do {
+      try fm.createDirectory(
+        at: primary.deletingLastPathComponent(),
+        withIntermediateDirectories: true
+      )
+      try defaultScaffold.write(to: primary, atomically: true, encoding: .utf8)
+    } catch {
+      throw ConfigError.scaffoldFailed(path: primary.path, underlying: error)
+    }
+    return primary
   }
 
   func match(url: URL) -> BrowserRef {
@@ -61,6 +77,10 @@ struct Config: Decodable {
         return resolve(browser: r.browser, profile: r.profile, args: r.args)
       }
     }
+    return defaultTarget()
+  }
+
+  func defaultTarget() -> BrowserRef {
     if let d = self.default {
       return resolve(browser: d.browser, profile: d.profile, args: d.args)
     }
@@ -117,15 +137,15 @@ extension Config.Rule {
 }
 
 enum ConfigError: LocalizedError {
-  case notFound(searched: [String])
   case parseFailed(path: String, underlying: Error)
+  case scaffoldFailed(path: String, underlying: Error)
 
   var errorDescription: String? {
     switch self {
-    case .notFound(let paths):
-      return "No config file found. Searched:\n" + paths.joined(separator: "\n")
     case .parseFailed(let path, let underlying):
       return "Failed to parse \(path): \(underlying.localizedDescription)"
+    case .scaffoldFailed(let path, let underlying):
+      return "Failed to write default config to \(path): \(underlying.localizedDescription)"
     }
   }
 }

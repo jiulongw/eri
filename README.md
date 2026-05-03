@@ -2,7 +2,7 @@
 
 A tiny macOS link router. Set Eri as your default web browser and it forwards every `http`/`https` link to the real browser you actually want — picked per-URL from a TOML config (host glob, host regex, or full-URL regex). Useful for sending work links to a Chrome work profile, GitHub to a Personal profile, localhost to Firefox, and everything else to Safari.
 
-Eri does not render web pages itself. It is a one-shot agent app (no Dock icon, no window) that wakes up, picks a browser, calls `open(1)`, and exits.
+Eri does not render web pages itself. It is a one-shot agent app (no Dock icon, no window) that wakes up, picks a browser, calls `open(1)`, and exits. Launching Eri manually (with no URL) forwards to the configured default browser, so it behaves like a normal browser shortcut once it's set as the system default.
 
 ## Requirements
 
@@ -29,10 +29,12 @@ make clean     # wipe .build/ and build/
 
 ## Configure
 
-Drop a config at one of:
+Eri reads its config from one of:
 
 - `~/.config/eri/config.toml` (preferred)
 - `~/Library/Application Support/Eri/config.toml`
+
+If neither exists on first launch, Eri scaffolds the preferred path with a minimal `[default] / browser = "com.apple.Safari"` so every link routes to Safari until you customize it.
 
 A starter config lives at [`config.example.toml`](./config.example.toml):
 
@@ -92,10 +94,12 @@ A rule's `browser` field is looked up in `[browsers]` first. On a miss, it's tre
 ## How it works
 
 1. macOS sends Eri a `GetURL` Apple Event for every clicked `http`/`https` link.
-2. Eri loads the TOML config, walks the rules, and resolves a `(browser, profile, args)` target.
+2. Eri loads the TOML config (auto-scaffolding a Safari default on first run), walks the rules, and resolves a `(browser, profile, args)` target.
 3. Eri shells out to `/usr/bin/open -b <bundleId> [--args …] <url>` and exits.
 
-Errors (missing config, parse failure, `open` non-zero exit) are surfaced as macOS user notifications and logged via `os.log` under subsystem `cc.novacore.eri`.
+When Eri is launched without a URL (e.g. clicking its Dock/Finder icon), it offers to set itself as the default browser, then launches the configured default browser with no URL.
+
+Errors (config parse failure, scaffold write failure, `open` non-zero exit) are surfaced as macOS user notifications and logged via `os.log` under subsystem `cc.novacore.eri`.
 
 ## Project layout
 

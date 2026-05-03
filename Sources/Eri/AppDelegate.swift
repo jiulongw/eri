@@ -18,11 +18,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   func applicationDidFinishLaunching(_ notification: Notification) {
     // If macOS launched us with a URL, the GetURL Apple Event has already
     // fired by the time we get here; otherwise treat this as a manual
-    // launch and offer to set Eri as the default browser.
+    // launch: offer to set Eri as the default browser, then forward to
+    // the configured default browser (Eri itself has no UI to show).
     DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
       guard let self = self, !self.didReceiveURL else { return }
       DefaultBrowserPrompt.runIfNeeded()
-      NSApp.terminate(nil)
+      self.launchDefaultBrowser()
+      self.scheduleQuit()
+    }
+  }
+
+  private func launchDefaultBrowser() {
+    guard let config = config else { return }
+    do {
+      try Router.openDefault(config: config)
+    } catch {
+      Notifier.shared.error(
+        title: "Eri",
+        body: "Failed to launch default browser: \(error.localizedDescription)"
+      )
     }
   }
 

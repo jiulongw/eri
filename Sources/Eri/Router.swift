@@ -6,7 +6,11 @@ enum Router {
     try launch(target: target, url: url)
   }
 
-  private static func launch(target: Config.BrowserRef, url: URL) throws {
+  static func openDefault(config: Config) throws {
+    try launch(target: config.defaultTarget(), url: nil)
+  }
+
+  private static func launch(target: Config.BrowserRef, url: URL?) throws {
     var passthrough: [String] = []
     // Safari has no CLI/URL-scheme way to select a profile, so silently
     // drop it rather than letting the --args path swallow the URL.
@@ -25,7 +29,10 @@ enum Router {
 
     var arguments: [String] = []
     if passthrough.isEmpty {
-      arguments += ["-b", target.browser, url.absoluteString]
+      arguments += ["-b", target.browser]
+      if let url {
+        arguments.append(url.absoluteString)
+      }
     } else {
       // -n forces a fresh launch; without it, `open` skips --args entirely
       // when the target is already running, dropping both the profile flag
@@ -33,7 +40,9 @@ enum Router {
       // the existing process, so no duplicate sticks around.
       arguments += ["-n", "-b", target.browser, "--args"]
       arguments += passthrough
-      arguments.append(url.absoluteString)
+      if let url {
+        arguments.append(url.absoluteString)
+      }
     }
 
     let process = Process()
