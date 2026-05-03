@@ -21,7 +21,7 @@ Compared to the alternatives:
 | Config format | TOML file | GUI (plist-backed) | JavaScript file |
 | Git-syncable across machines | yes, single text file | partial — GUI state | yes |
 | Runtime model | one-shot, exits per click | resident agent | resident agent |
-| External dependencies | TOMLKit | — | embedded JS engine |
+| External dependencies | none (vendored toml++) | — | embedded JS engine |
 
 If you want a popup picker every time you click a link, Eri is the wrong tool — use Velja or Choosy. If you want declarative, file-based routing that survives a clean macOS install by `git pull`-ing your dotfiles, that's the niche Eri is built for.
 
@@ -159,22 +159,28 @@ Sources/Eri/
   main.swift                  NSApplication boot
   AppDelegate.swift           GetURL handler + lifecycle
   Config.swift                TOML schema, rule matching
+  TomlDecoder.swift           Swift wrapper over the C ABI; manual Config decoder
   Router.swift                open(1) invocation
   ChromeProfileResolver.swift directory / user_name / display-name lookup
   DefaultBrowserPrompt.swift  manual-launch onboarding alert
   Notifier.swift              os.log + UNUserNotificationCenter wrapper
+Sources/CTomlPlusPlus/
+  include/toml.hpp            vendored toml++ single-header (MIT)
+  include/eri_toml.h          C ABI exposed to Swift
+  include/module.modulemap
+  eri_toml.cpp                C++ shim implementing the C ABI on top of toml++
 Resources/
   Info.plist                  declares http/https URL schemes, LSUIElement
   AppIcon.png
-Tests/EriTests/               Swift Testing suite (rule matching)
+Tests/EriTests/               Swift Testing suite (rule matching + decoder)
 Makefile                      .app bundling, codesign, lsregister
-Package.swift                 SwiftPM (depends on TOMLKit)
+Package.swift                 SwiftPM (no third-party deps)
 config.example.toml           starter config
 ```
 
 ## Dependencies
 
-Single SwiftPM dependency: [TOMLKit](https://github.com/LebJe/TOMLKit) for config parsing. macOS 12+ deployment target.
+No SwiftPM dependencies. TOML parsing is provided by [toml++](https://github.com/marzer/tomlplusplus) v3.4.0, vendored as `Sources/CTomlPlusPlus/include/toml.hpp` (MIT). macOS 12+ deployment target.
 
 ## License
 

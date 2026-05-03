@@ -1,18 +1,17 @@
 import Foundation
-import TOMLKit
 
-struct Config: Decodable {
+struct Config {
   let `default`: BrowserRef?
   let rule: [Rule]?
   let browsers: [String: BrowserRef]?
 
-  struct BrowserRef: Decodable {
+  struct BrowserRef {
     let browser: String
     let profile: String?
     let args: [String]?
   }
 
-  struct Rule: Decodable {
+  struct Rule {
     let host: String?
     let hostRegex: String?
     let urlRegex: String?
@@ -20,26 +19,12 @@ struct Config: Decodable {
     let browser: String
     let profile: String?
     let args: [String]?
-
-    enum CodingKeys: String, CodingKey {
-      case host
-      case hostRegex = "host_regex"
-      case urlRegex = "url_regex"
-      case domain
-      case browser
-      case profile
-      case args
-    }
   }
 
   static func load() throws -> Config {
     let url = try resolveConfigPath()
     let text = try String(contentsOf: url, encoding: .utf8)
-    do {
-      return try TOMLDecoder().decode(Config.self, from: text)
-    } catch {
-      throw ConfigError.parseFailed(path: url.path, underlying: error)
-    }
+    return try Config.decode(text: text, path: url.path)
   }
 
   static let defaultScaffold = """

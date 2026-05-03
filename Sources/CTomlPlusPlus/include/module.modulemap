@@ -1,0 +1,4 @@
+module CTomlPlusPlus {
+    header "eri_toml.h"
+    export *
+}

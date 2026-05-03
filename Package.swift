@@ -4,17 +4,22 @@ import PackageDescription
 let package = Package(
     name: "Eri",
     platforms: [.macOS(.v12)],
-    dependencies: [
-        .package(url: "https://github.com/LebJe/TOMLKit.git", from: "0.6.0"),
-    ],
     targets: [
+        .target(
+            name: "CTomlPlusPlus",
+            publicHeadersPath: "include",
+            cxxSettings: [
+                .unsafeFlags(["-Wno-deprecated-literal-operator"]),
+            ]
+        ),
         .executableTarget(
             name: "Eri",
-            dependencies: ["TOMLKit"]
+            dependencies: ["CTomlPlusPlus"]
         ),
         .testTarget(
             name: "EriTests",
             dependencies: ["Eri"]
         ),
-    ]
+    ],
+    cxxLanguageStandard: .cxx17
 )
