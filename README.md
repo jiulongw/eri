@@ -4,6 +4,8 @@ A tiny macOS link router. Set Eri as your default web browser and it forwards ev
 
 Eri does not render web pages itself. It is a one-shot agent app (no Dock icon, no menu bar, no preferences window) that wakes up, picks a browser, calls `open(1)`, and exits in well under a second. Launching Eri manually (with no URL) forwards to the configured default browser, so it behaves like a normal browser shortcut once it's set as the system default.
 
+> **About the name.** *Eri* (えり / 選) is a Japanese given name that also carries the meaning *to select, to pick* — which is, more or less, the entire job description.
+
 ## Why Eri
 
 If you keep your dotfiles in a git repo and rsync/`stow`/`chezmoi` them across machines, the existing macOS link routers tend to get in the way:
@@ -17,11 +19,12 @@ Compared to the alternatives:
 
 | | Eri | Velja / Choosy / Browserosaurus | Finicky |
 | --- | --- | --- | --- |
-| UI surface | none | menu-bar app + prefs window | none |
+| UI surface | none | menu-bar app + prefs window | menu-bar icon (hideable) + config/diagnostics window |
 | Config format | TOML file | GUI (plist-backed) | JavaScript file |
 | Git-syncable across machines | yes, single text file | partial — GUI state | yes |
 | Runtime model | one-shot, exits per click | resident agent | resident agent |
 | External dependencies | none (vendored toml++) | — | embedded JS engine |
+| Bundle size | ~2 MB | ~10–110 MB (Browserosaurus is Electron) | ~30 MB |
 
 If you want a popup picker every time you click a link, Eri is the wrong tool — use Velja or Choosy. If you want declarative, file-based routing that survives a clean macOS install by `git pull`-ing your dotfiles, that's the niche Eri is built for.
 
