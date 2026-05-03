@@ -28,19 +28,31 @@ Compared to the alternatives:
 
 If you want a popup picker every time you click a link, Eri is the wrong tool — use Velja or Choosy. If you want declarative, file-based routing that survives a clean macOS install by `git pull`-ing your dotfiles, that's the niche Eri is built for.
 
-## Requirements
+## Install
+
+Eri ships both as a notarized pre-built `.app` and as source. At runtime the only requirement is macOS 12 or newer.
+
+### Homebrew (easiest)
+
+```sh
+brew install --cask novacore-cc/tap/eri
+```
+
+### Pre-built `.app`
+
+Download the notarized `Eri.app` from the [GitHub Releases](https://github.com/novacore-cc/eri/releases) page and drag it into `/Applications`.
+
+### Build from source
+
+Build requirements:
 
 - macOS 12 or newer
 - Swift 5.9+ toolchain (Xcode command line tools)
 - [`pngquant`](https://pngquant.org/) on `PATH` for the icon build step (`brew install pngquant`)
 
-## Build & install
-
 ```sh
 make install   # builds build/Eri.app, copies to /Applications, registers with LaunchServices
 ```
-
-Then open **System Settings → Desktop & Dock → Default web browser** and pick **Eri**. (Eri will also offer to do this for you the first time you launch it manually.)
 
 Other useful targets:
 
@@ -52,6 +64,10 @@ make clean     # wipe .build/ and build/
 ```
 
 `swift build` alone is not enough — Eri needs to be a proper `.app` bundle with `Info.plist` declaring `CFBundleURLTypes` for `http`/`https` and registered with LaunchServices before macOS will list it as a default-browser candidate. Use the Makefile.
+
+### Set as default browser
+
+Just launch Eri after installing. If it isn't the system default yet, it offers to set itself; if it already is, it forwards to your configured default browser like a normal browser shortcut.
 
 ## Configure
 
