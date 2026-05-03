@@ -17,6 +17,10 @@
 # --profile-directory=<value> for Chromium browsers. Rule-level `args` are
 # appended to any browser-level `args`.
 
+# Fallback when no rule matches.
+[default]
+browser = "safari"
+
 [browsers.safari]
 browser = "com.apple.Safari"
 
@@ -27,9 +31,6 @@ profile = "Personal"
 [browsers.chrome-work]
 browser = "com.google.Chrome"
 profile = "Work"
-
-# Fallback when no rule matches.
-default = { browser = "safari" }
 
 # Rules are evaluated top-to-bottom; first match wins.
 # Each rule must match by exactly one of: host (glob), domain, host_regex,
