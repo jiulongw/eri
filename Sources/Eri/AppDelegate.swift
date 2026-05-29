@@ -81,6 +81,39 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
   }
 
+  func application(_ sender: NSApplication, openFiles filenames: [String]) {
+    // Local files (e.g. .html/.htm double-clicked in Finder) arrive as
+    // kAEOpenDocuments rather than the GetURL Apple Event, so they need
+    // their own delegate hook. A file:// URL has no host, so Config.match
+    // falls through to the default browser unless a url_regex rule matches.
+    didReceiveURL = true
+    defer { scheduleQuit() }
+
+    guard let config = config else {
+      Notifier.shared.error(
+        title: "Eri",
+        body: configError?.localizedDescription ?? "Configuration not loaded."
+      )
+      sender.reply(toOpenOrPrint: .failure)
+      return
+    }
+
+    var hadError = false
+    for filename in filenames {
+      let url = URL(fileURLWithPath: filename)
+      do {
+        try Router.open(url: url, config: config)
+      } catch {
+        hadError = true
+        Notifier.shared.error(
+          title: "Eri",
+          body: "Failed to open \(url.lastPathComponent): \(error.localizedDescription)"
+        )
+      }
+    }
+    sender.reply(toOpenOrPrint: hadError ? .failure : .success)
+  }
+
   private func scheduleQuit() {
     // Brief grace period so any pending notification request is delivered
     // before the process exits.
